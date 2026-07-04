@@ -23,10 +23,10 @@ export default function Editor() {
       {mode === "2d" ? <Canvas2D /> : <CanvasHost />}
       <TopBar />
       {mode === "2d" && <LayerBar />}
-      {mode === "2d" && <Hotbar onOpenPicker={() => setPickerOpen(true)} />}
-      {mode === "2d" && pickerOpen && (
-        <ColorPicker onClose={() => setPickerOpen(false)} />
-      )}
+      {/* The color + tool dock is shared: in 3D, Paint adds a cube, Erase
+          removes one, Pick eyedrops — same tools, same active color as 2D. */}
+      <Hotbar onOpenPicker={() => setPickerOpen(true)} />
+      {pickerOpen && <ColorPicker onClose={() => setPickerOpen(false)} />}
     </main>
   );
 }
