@@ -2,25 +2,31 @@
 
 import { useState } from "react";
 import Canvas2D from "../editor2d/Canvas2D";
+import CanvasHost from "../editor3d/CanvasHost";
+import { useEditorStore } from "../store/editorStore";
 import ColorPicker from "./ColorPicker";
 import Hotbar from "./Hotbar";
 import LayerBar from "./LayerBar";
 import TopBar from "./TopBar";
 
 /**
- * The editor shell. For now it hosts the 2D depth-slice canvas; Phase 4 adds the
- * 3D view here behind the mode toggle, sharing the same voxel store.
+ * The editor shell. 2D and 3D are two views over the same voxel store — the
+ * mode toggle swaps which one is mounted; the data (and thus your work) lives in
+ * the store, so switching never loses anything.
  */
 export default function Editor() {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const mode = useEditorStore((s) => s.mode);
 
   return (
     <main className="relative h-full w-full overflow-hidden">
-      <Canvas2D />
+      {mode === "2d" ? <Canvas2D /> : <CanvasHost />}
       <TopBar />
-      <LayerBar />
-      <Hotbar onOpenPicker={() => setPickerOpen(true)} />
-      {pickerOpen && <ColorPicker onClose={() => setPickerOpen(false)} />}
+      {mode === "2d" && <LayerBar />}
+      {mode === "2d" && <Hotbar onOpenPicker={() => setPickerOpen(true)} />}
+      {mode === "2d" && pickerOpen && (
+        <ColorPicker onClose={() => setPickerOpen(false)} />
+      )}
     </main>
   );
 }

@@ -45,11 +45,10 @@ export default function TopBar() {
           <button
             key={m}
             onClick={() => setMode(m)}
-            disabled={m === "3d"}
             className={`px-3 py-1.5 uppercase ${
               mode === m ? "bg-white text-black" : "text-zinc-300"
-            } disabled:cursor-not-allowed disabled:opacity-40`}
-            title={m === "3d" ? "3D view arrives in a later phase" : "2D editing"}
+            }`}
+            title={m === "3d" ? "3D view — orbit your character" : "2D editing"}
           >
             {m}
           </button>
