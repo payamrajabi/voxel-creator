@@ -4,6 +4,7 @@ import { useState } from "react";
 import Canvas2D from "../editor2d/Canvas2D";
 import ColorPicker from "./ColorPicker";
 import Hotbar from "./Hotbar";
+import LayerBar from "./LayerBar";
 import TopBar from "./TopBar";
 
 /**
@@ -17,6 +18,7 @@ export default function Editor() {
     <main className="relative h-full w-full overflow-hidden">
       <Canvas2D />
       <TopBar />
+      <LayerBar />
       <Hotbar onOpenPicker={() => setPickerOpen(true)} />
       {pickerOpen && <ColorPicker onClose={() => setPickerOpen(false)} />}
     </main>
