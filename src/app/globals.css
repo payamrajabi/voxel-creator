@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --background: #2e2f32;
+  --foreground: #f4f4f5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Canvas-first app: the page itself must never scroll, bounce, or zoom. */
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
