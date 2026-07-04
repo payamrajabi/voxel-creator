@@ -3,8 +3,8 @@
 import { useEditorStore } from "../store/editorStore";
 import { useVoxelStore } from "../store/voxelStore";
 
-/** Compact top bar: title, undo/redo, and the 2D/3D mode toggle. */
-export default function TopBar() {
+/** Compact top bar: title/menu, undo/redo, and the 2D/3D mode toggle. */
+export default function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const canUndo = useVoxelStore((s) => s.undoStack.length > 0);
   const canRedo = useVoxelStore((s) => s.redoStack.length > 0);
   const undo = useVoxelStore((s) => s.undo);
@@ -17,8 +17,17 @@ export default function TopBar() {
       className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-2 p-3"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
     >
-      <div className="pointer-events-auto rounded-xl bg-zinc-900/70 px-3 py-1.5 text-sm font-semibold backdrop-blur">
-        VoxelOS
+      <div className="pointer-events-auto flex items-center gap-1">
+        <div className="rounded-xl bg-zinc-900/70 px-3 py-1.5 text-sm font-semibold backdrop-blur">
+          VoxelOS
+        </div>
+        <button
+          onClick={onOpenMenu}
+          className="rounded-xl bg-zinc-900/70 px-2.5 py-1.5 text-base backdrop-blur transition-transform active:scale-95"
+          aria-label="Project menu — export or import"
+        >
+          ☰
+        </button>
       </div>
 
       <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-zinc-900/70 p-1 backdrop-blur">

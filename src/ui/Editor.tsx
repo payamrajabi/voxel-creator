@@ -5,6 +5,7 @@ import Canvas2D from "../editor2d/Canvas2D";
 import ColorPicker from "./ColorPicker";
 import Hotbar from "./Hotbar";
 import LayerBar from "./LayerBar";
+import ProjectMenu from "./ProjectMenu";
 import TopBar from "./TopBar";
 
 /**
@@ -13,14 +14,16 @@ import TopBar from "./TopBar";
  */
 export default function Editor() {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <main className="relative h-full w-full overflow-hidden">
       <Canvas2D />
-      <TopBar />
+      <TopBar onOpenMenu={() => setMenuOpen(true)} />
       <LayerBar />
       <Hotbar onOpenPicker={() => setPickerOpen(true)} />
       {pickerOpen && <ColorPicker onClose={() => setPickerOpen(false)} />}
+      {menuOpen && <ProjectMenu onClose={() => setMenuOpen(false)} />}
     </main>
   );
 }

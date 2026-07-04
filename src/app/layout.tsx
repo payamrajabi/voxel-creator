@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import AutosaveController from "@/ui/AutosaveController";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
       <body className="h-full touch-none select-none overflow-hidden overscroll-none bg-[#2E2F32] text-zinc-100">
         {children}
+        <AutosaveController />
         <ServiceWorkerRegistrar />
       </body>
     </html>
