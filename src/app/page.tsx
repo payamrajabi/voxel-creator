@@ -1,5 +1,5 @@
-import Editor from "@/ui/Editor";
+import App from "@/ui/App";
 
 export default function Home() {
-  return <Editor />;
+  return <App />;
 }

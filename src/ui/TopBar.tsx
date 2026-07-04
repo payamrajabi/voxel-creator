@@ -2,6 +2,7 @@
 
 import { useEditorStore } from "../store/editorStore";
 import { useVoxelStore } from "../store/voxelStore";
+import { useAppStore } from "../store/appStore";
 
 /** Compact top bar: title, undo/redo, and the 2D/3D mode toggle. */
 export default function TopBar() {
@@ -17,9 +18,13 @@ export default function TopBar() {
       className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-2 p-3"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
     >
-      <div className="pointer-events-auto rounded-xl bg-zinc-900/70 px-3 py-1.5 text-sm font-semibold backdrop-blur">
-        VoxelOS
-      </div>
+      <button
+        onClick={() => void useAppStore.getState().exitToGallery()}
+        className="pointer-events-auto flex items-center gap-1 rounded-xl bg-zinc-900/70 px-3 py-1.5 text-sm font-semibold backdrop-blur transition-transform active:scale-95"
+        aria-label="Back to your characters (saves first)"
+      >
+        <span className="text-zinc-400">‹</span> Projects
+      </button>
 
       <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-zinc-900/70 p-1 backdrop-blur">
         <button
