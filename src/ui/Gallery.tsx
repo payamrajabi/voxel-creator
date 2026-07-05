@@ -2,18 +2,17 @@
 
 import { UserButton } from "@clerk/nextjs";
 import { useAppStore } from "../store/appStore";
+import GalleryCard from "./GalleryCard";
 
 /**
- * The home screen: a grid of saved characters with their front-view thumbnails.
- * Tap a card to open it, tap the name to rename, ＋ New to start another. Kept
- * deliberately simple and finger-friendly.
+ * The home screen: a grid of saved characters, each shown as a live 3D preview
+ * that slowly orbits the build (see GalleryCard). Tap a card to open it, tap the
+ * name to rename, ＋ New to start another. Kept deliberately simple and
+ * finger-friendly.
  */
 export default function Gallery() {
   const projects = useAppStore((s) => s.projects);
   const newProject = useAppStore((s) => s.newProject);
-  const openProject = useAppStore((s) => s.openProject);
-  const renameProject = useAppStore((s) => s.renameProject);
-  const removeProject = useAppStore((s) => s.removeProject);
 
   return (
     <main className="h-full w-full overflow-y-auto bg-[#2E2F32] text-zinc-100">
@@ -46,46 +45,7 @@ export default function Gallery() {
           )}
 
           {projects.map((p) => (
-            <div key={p.id} className="flex flex-col gap-1.5">
-              <button
-                onClick={() => void openProject(p.id)}
-                className="relative aspect-square overflow-hidden rounded-2xl bg-zinc-800 transition-transform active:scale-95"
-              >
-                {p.thumbnail ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.thumbnail}
-                    alt={p.name}
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center text-3xl text-zinc-600">
-                    ▦
-                  </span>
-                )}
-              </button>
-              <div className="flex items-center gap-1">
-                <input
-                  defaultValue={p.name}
-                  onBlur={(e) => void renameProject(p.id, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                  }}
-                  className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 text-sm text-zinc-200 outline-none focus:bg-white/10"
-                  aria-label="Character name"
-                />
-                <button
-                  onClick={() => {
-                    if (confirm(`Delete "${p.name}"? This can't be undone.`))
-                      void removeProject(p.id);
-                  }}
-                  className="rounded-md px-1.5 py-0.5 text-zinc-500 transition-colors active:text-red-400"
-                  aria-label={`Delete ${p.name}`}
-                >
-                  🗑
-                </button>
-              </div>
-            </div>
+            <GalleryCard key={p.id} project={p} />
           ))}
         </div>
       </div>
