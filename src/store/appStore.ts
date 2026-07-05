@@ -98,18 +98,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
       gridSize: DEFAULT_GRID_SIZE,
       voxels: [],
     });
-    const t = Date.now();
-    await putProject({
-      id,
-      name,
-      createdAt: t,
-      updatedAt: t,
-      data: useVoxelStore.getState().toProjectData(),
-      thumbnail: "",
-    });
+    // Don't persist yet: a fresh character is empty, and we never save empties.
+    // The first placed voxel triggers autosave → saveCurrent, which writes it
+    // for real; back out before then and nothing was ever stored or synced.
     // A new character is always yours and editable, so land back in "mine".
     set({ currentId: id, view: "editor", readOnly: false, scope: "mine" });
-    scheduleSync();
   },
 
   openProject: async (id) => {
@@ -130,8 +123,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
   saveCurrent: async () => {
     const id = get().currentId;
     if (!id) return;
-    const existing = await getProject(id);
     const data = useVoxelStore.getState().toProjectData();
+    // Policy: never persist an empty character. If it has no voxels (a brand-new
+    // character the user backed out of, or one they cleared), there's nothing
+    // worth keeping — skip the write and the sync entirely.
+    if (data.voxels.length === 0) return;
+    const existing = await getProject(id);
     const t = Date.now();
     await putProject({
       id,

@@ -54,17 +54,26 @@ export async function POST(req: NextRequest) {
 function isValidRecord(r: unknown): r is IncomingCharacter {
   if (!r || typeof r !== "object") return false;
   const o = r as Record<string, unknown>;
-  return (
-    typeof o.id === "string" &&
-    o.id.length > 0 &&
-    o.id.length <= 100 &&
-    typeof o.name === "string" &&
-    o.name.length <= 200 &&
-    typeof o.updatedAt === "number" &&
-    Number.isFinite(o.updatedAt) &&
-    (o.deleted === undefined || typeof o.deleted === "boolean") &&
-    o.data !== null &&
-    typeof o.data === "object" &&
-    JSON.stringify(o.data).length <= MAX_DATA_BYTES
-  );
+  if (
+    typeof o.id !== "string" ||
+    o.id.length === 0 ||
+    o.id.length > 100 ||
+    typeof o.name !== "string" ||
+    o.name.length > 200 ||
+    typeof o.updatedAt !== "number" ||
+    !Number.isFinite(o.updatedAt) ||
+    (o.deleted !== undefined && typeof o.deleted !== "boolean") ||
+    o.data === null ||
+    typeof o.data !== "object" ||
+    JSON.stringify(o.data).length > MAX_DATA_BYTES
+  ) {
+    return false;
+  }
+  // Never store an empty character. A tombstone (deleted) is exempt: its data is
+  // irrelevant — it exists only to propagate the delete to other devices.
+  if (o.deleted !== true) {
+    const voxels = (o.data as { voxels?: unknown }).voxels;
+    if (!Array.isArray(voxels) || voxels.length === 0) return false;
+  }
+  return true;
 }
