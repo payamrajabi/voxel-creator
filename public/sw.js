@@ -2,7 +2,7 @@
  * Phase 0: app-shell offline support + installability. Advanced runtime
  * caching can migrate to Serwist later if we ever need it.
  */
-const CACHE = "voxelos-v1";
+const CACHE = "voxelos-v2";
 const APP_SHELL = ["/", "/spike", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -28,7 +28,26 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) {
+  const url = new URL(req.url);
+  if (req.method !== "GET" || url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Dynamic API (per-user + the shared feed): never serve a stale body. Go to
+  // the network first so signed-in data is always current; fall back to the last
+  // cached response only when the network is unavailable (offline support). This
+  // is why the "All Characters" feed must NOT be stale-while-revalidated — a
+  // cached feed would hide freshly-published characters until a later reload.
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req)),
+    );
     return;
   }
 
