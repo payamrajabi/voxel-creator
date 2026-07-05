@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppStore } from "../store/appStore";
+import { previewAspect } from "../editor3d/previewFraming";
 import type { ProjectRecord } from "../persistence/db";
 
 // r3f touches WebGL on mount, so the preview must never be server-rendered.
@@ -34,6 +35,13 @@ export default function GalleryCard({ project: p }: { project: ProjectRecord }) 
   const [previewReady, setPreviewReady] = useState(false);
   const hasVoxels = p.data.voxels.length > 0;
 
+  // Shape the card to the build: tall builds get portrait cards, wide/flat ones
+  // landscape. Empty characters keep a square placeholder.
+  const aspect = useMemo(
+    () => (hasVoxels ? previewAspect(p.data.voxels) : 1),
+    [hasVoxels, p.data.voxels],
+  );
+
   useEffect(() => {
     const el = cardRef.current;
     if (!el || !hasVoxels) return;
@@ -54,7 +62,8 @@ export default function GalleryCard({ project: p }: { project: ProjectRecord }) 
       <button
         ref={cardRef}
         onClick={() => void openProject(p.id)}
-        className="relative aspect-square overflow-hidden rounded-2xl bg-zinc-800 transition-transform active:scale-95"
+        style={{ aspectRatio: aspect }}
+        className="relative w-full overflow-hidden rounded-2xl bg-zinc-800 transition-transform active:scale-95"
       >
         {p.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element

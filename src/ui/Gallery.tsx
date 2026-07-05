@@ -33,11 +33,11 @@ export default function Gallery() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="flex flex-col gap-4">
           {projects.length === 0 && (
             <button
               onClick={() => void newProject()}
-              className="col-span-2 flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/20 text-zinc-400 transition-transform active:scale-95 sm:col-span-3"
+              className="flex aspect-video flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/20 text-zinc-400 transition-transform active:scale-95"
             >
               <span className="text-4xl">＋</span>
               <span className="text-sm">Make your first character</span>
