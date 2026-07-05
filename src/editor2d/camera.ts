@@ -1,9 +1,10 @@
 /**
  * 2D canvas camera: maps between world cells and screen pixels. Pure + testable.
  *
- * World coords are grid cells with Y up (Y=0 = feet at the bottom, per PRD §3).
- * A world point (wx, wy) maps to screen px (originX + wx*scale, originY - wy*scale)
- * — note the Y flip, since screen pixels grow downward. `scale` is CSS px per cell.
+ * World coords are grid cells with Y up (Y=0 = the ground line, per PRD §3), and
+ * the origin (0,0) can be built around in every direction. A world point (wx, wy)
+ * maps to screen px (originX + wx*scale, originY - wy*scale) — note the Y flip,
+ * since screen pixels grow downward. `scale` is CSS px per cell.
  */
 export type Camera = { scale: number; originX: number; originY: number };
 
@@ -60,13 +61,13 @@ export function zoomAround(
   };
 }
 
-/** Initial camera: centered on the character area, zoomed so ~cellsVisible fit. */
+/** Initial camera: centered on the origin, zoomed so ~cellsVisible fit. */
 export function initialCamera(
   cssW: number,
   cssH: number,
   cellsVisible: number = 22,
-  centerX: number = 32,
-  centerY: number = 8,
+  centerX: number = 0,
+  centerY: number = 0,
 ): Camera {
   const scale = clamp(
     Math.min(cssW, cssH) / cellsVisible,

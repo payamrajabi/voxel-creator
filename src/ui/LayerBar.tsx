@@ -1,16 +1,33 @@
 "use client";
 
+import { useMemo } from "react";
 import { useEditorStore } from "../store/editorStore";
+import { useVoxelStore } from "../store/voxelStore";
+import { HALF_EXTENT } from "../core/coords";
 
 /** Depth navigation for 2D mode: prev/next, readout, scrubber, onion toggle. */
 export default function LayerBar() {
   const layer = useEditorStore((s) => s.layer);
-  const layerCount = useEditorStore((s) => s.layerCount);
   const onion = useEditorStore((s) => s.onionSkin);
   const setLayer = useEditorStore((s) => s.setLayer);
   const nextLayer = useEditorStore((s) => s.nextLayer);
   const prevLayer = useEditorStore((s) => s.prevLayer);
   const toggleOnion = useEditorStore((s) => s.toggleOnionSkin);
+
+  // The scrubber spans the depths the character actually uses (plus a little
+  // room to grow on each side), recomputed as the model changes. The current
+  // layer is always included, so scrubbing past the model extends the range.
+  const revision = useVoxelStore((s) => s.revision);
+  const [lo, hi] = useMemo(() => {
+    const b = useVoxelStore.getState().bounds();
+    const minZ = b ? b.min[2] : 0;
+    const maxZ = b ? b.max[2] : 0;
+    return [
+      Math.max(-HALF_EXTENT, Math.min(minZ, layer) - 2),
+      Math.min(HALF_EXTENT, Math.max(maxZ, layer) + 2),
+    ] as const;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revision, layer]);
 
   return (
     <div
@@ -20,18 +37,18 @@ export default function LayerBar() {
       <div className="pointer-events-auto flex items-center gap-1.5 rounded-xl bg-zinc-900/70 px-2 py-1.5 text-xs backdrop-blur">
         <button
           onClick={prevLayer}
-          disabled={layer <= 0}
+          disabled={layer <= -HALF_EXTENT}
           className="rounded-lg px-2 py-1 disabled:opacity-30"
           aria-label="Previous layer"
         >
           ◀
         </button>
         <span className="min-w-[5rem] text-center tabular-nums text-zinc-200">
-          Layer {layer + 1} / {layerCount}
+          Depth {layer}
         </span>
         <button
           onClick={nextLayer}
-          disabled={layer >= 63}
+          disabled={layer >= HALF_EXTENT}
           className="rounded-lg px-2 py-1 disabled:opacity-30"
           aria-label="Next layer"
         >
@@ -39,8 +56,8 @@ export default function LayerBar() {
         </button>
         <input
           type="range"
-          min={0}
-          max={Math.max(0, layerCount - 1)}
+          min={lo}
+          max={hi}
           value={layer}
           onChange={(e) => setLayer(Number(e.target.value))}
           className="mx-1 hidden w-28 accent-white sm:block"

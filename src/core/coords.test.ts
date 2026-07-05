@@ -4,6 +4,7 @@ import {
   boundsOfKeys,
   boundsSize,
   computeBounds,
+  HALF_EXTENT,
   isInsideGrid,
   suggestedOrigin,
 } from "./coords";
@@ -48,10 +49,14 @@ describe("coords", () => {
     ]);
   });
 
-  it("isInsideGrid respects the default 64^3 volume", () => {
+  it("isInsideGrid is symmetric — you build in every direction from the origin", () => {
     expect(isInsideGrid(0, 0, 0)).toBe(true);
-    expect(isInsideGrid(63, 63, 63)).toBe(true);
-    expect(isInsideGrid(64, 0, 0)).toBe(false);
-    expect(isInsideGrid(-1, 0, 0)).toBe(false);
+    // negative cells (left / down / in front of the origin) are inside now
+    expect(isInsideGrid(-5, -5, -5)).toBe(true);
+    expect(isInsideGrid(HALF_EXTENT, HALF_EXTENT, HALF_EXTENT)).toBe(true);
+    expect(isInsideGrid(-HALF_EXTENT, -HALF_EXTENT, -HALF_EXTENT)).toBe(true);
+    // only the outer shell is out of bounds
+    expect(isInsideGrid(HALF_EXTENT + 1, 0, 0)).toBe(false);
+    expect(isInsideGrid(0, 0, -HALF_EXTENT - 1)).toBe(false);
   });
 });

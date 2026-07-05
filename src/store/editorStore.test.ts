@@ -1,31 +1,30 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useEditorStore } from "./editorStore";
+import { HALF_EXTENT } from "../core/coords";
 
 const s = () => useEditorStore.getState();
 
 beforeEach(() => {
-  s().setLayerCount(1);
   s().setLayer(0);
 });
 
 describe("editorStore layers", () => {
-  it("setLayer clamps to [0,63] and grows layerCount", () => {
+  it("setLayer clamps to the centered [-HALF, HALF] range", () => {
     s().setLayer(5);
     expect(s().layer).toBe(5);
-    expect(s().layerCount).toBe(6);
-    s().setLayer(100);
-    expect(s().layer).toBe(63);
-    s().setLayer(-3);
-    expect(s().layer).toBe(0);
+    s().setLayer(HALF_EXTENT + 100);
+    expect(s().layer).toBe(HALF_EXTENT);
+    s().setLayer(-HALF_EXTENT - 100);
+    expect(s().layer).toBe(-HALF_EXTENT);
   });
 
-  it("nextLayer extends depth; prevLayer stops at 0", () => {
+  it("nextLayer / prevLayer step through depth and can go negative", () => {
+    s().setLayer(0);
     s().nextLayer();
     expect(s().layer).toBe(1);
-    expect(s().layerCount).toBe(2);
     s().prevLayer();
     s().prevLayer();
-    expect(s().layer).toBe(0);
+    expect(s().layer).toBe(-1);
   });
 
   it("toggleOnionSkin flips the flag", () => {

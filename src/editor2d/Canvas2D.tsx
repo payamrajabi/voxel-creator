@@ -5,7 +5,7 @@ import { useVoxelStore } from "../store/voxelStore";
 import { useEditorStore } from "../store/editorStore";
 import { colorHex } from "../core/palette";
 import { fromKey } from "../core/voxelKey";
-import { isInsideGrid } from "../core/coords";
+import { HALF_EXTENT, isInsideGrid } from "../core/coords";
 import {
   cellsAlongLine,
   dist,
@@ -65,15 +65,15 @@ export default function Canvas2D() {
     const { layer, onionSkin } = useEditorStore.getState();
     const voxels = useVoxelStore.getState().voxels;
 
-    // Visible cell window (clamped to the 64³ grid), with a 1-cell margin.
+    // Visible cell window (clamped to the buildable volume), with a 1-cell margin.
     const [wx0] = screenToWorld(cam, 0, 0);
     const [wx1] = screenToWorld(cam, w, 0);
     const [, wyTop] = screenToWorld(cam, 0, 0);
     const [, wyBot] = screenToWorld(cam, 0, h);
-    const gx0 = Math.max(0, Math.floor(wx0));
-    const gx1 = Math.min(64, Math.ceil(wx1));
-    const gy0 = Math.max(0, Math.floor(wyBot));
-    const gy1 = Math.min(64, Math.ceil(wyTop));
+    const gx0 = Math.max(-HALF_EXTENT, Math.floor(wx0));
+    const gx1 = Math.min(HALF_EXTENT, Math.ceil(wx1));
+    const gy0 = Math.max(-HALF_EXTENT, Math.floor(wyBot));
+    const gy1 = Math.min(HALF_EXTENT, Math.ceil(wyTop));
 
     const fill = (x: number, y: number, hex: string, alpha: number) => {
       const [sx, sy] = worldToScreen(cam, x, y + 1);

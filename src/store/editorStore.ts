@@ -1,23 +1,26 @@
 import { create } from "zustand";
 import type { ColorId } from "../core/types";
+import { HALF_EXTENT } from "../core/coords";
 
 export type Tool = "paint" | "erase" | "eyedropper";
 export type Mode = "2d" | "3d";
 
-const MAX_DEPTH = 64;
+/** Keep the active depth-slice inside the centered buildable volume. */
+const clampLayer = (z: number) =>
+  Math.max(-HALF_EXTENT, Math.min(HALF_EXTENT, Math.floor(z)));
 
 /**
  * Editor UI state — how you're looking at and touching the voxel data. Kept
  * separate from the voxel store (the data itself). `layer` is the active depth-
- * slice (Z) where 2D edits land; `layerCount` is how many slices the depth
- * scrubber exposes (grows as you build front-to-back).
+ * slice (Z, signed) where 2D edits land; it can go negative because the origin
+ * is the center of the build volume. The depth scrubber's range is derived from
+ * the model's actual Z-extent in `LayerBar`, not tracked here.
  */
 export type EditorState = {
   mode: Mode;
   tool: Tool;
   color: ColorId;
   layer: number;
-  layerCount: number;
   onionSkin: boolean;
 
   setMode: (m: Mode) => void;
@@ -26,7 +29,6 @@ export type EditorState = {
   setLayer: (z: number) => void;
   nextLayer: () => void;
   prevLayer: () => void;
-  setLayerCount: (n: number) => void;
   toggleOnionSkin: () => void;
 };
 
@@ -35,24 +37,13 @@ export const useEditorStore = create<EditorState>()((set) => ({
   tool: "paint",
   color: 11, // Orange — a friendly, visible default
   layer: 0,
-  layerCount: 1,
   onionSkin: false,
 
   setMode: (mode) => set({ mode }),
   setTool: (tool) => set({ tool }),
   setColor: (color) => set({ color }),
-  setLayer: (z) =>
-    set((s) => {
-      const layer = Math.max(0, Math.min(MAX_DEPTH - 1, Math.floor(z)));
-      return { layer, layerCount: Math.max(s.layerCount, layer + 1) };
-    }),
-  nextLayer: () =>
-    set((s) => {
-      const layer = Math.min(MAX_DEPTH - 1, s.layer + 1);
-      return { layer, layerCount: Math.max(s.layerCount, layer + 1) };
-    }),
-  prevLayer: () => set((s) => ({ layer: Math.max(0, s.layer - 1) })),
-  setLayerCount: (n) =>
-    set({ layerCount: Math.max(1, Math.min(MAX_DEPTH, Math.floor(n))) }),
+  setLayer: (z) => set({ layer: clampLayer(z) }),
+  nextLayer: () => set((s) => ({ layer: Math.min(HALF_EXTENT, s.layer + 1) })),
+  prevLayer: () => set((s) => ({ layer: Math.max(-HALF_EXTENT, s.layer - 1) })),
   toggleOnionSkin: () => set((s) => ({ onionSkin: !s.onionSkin })),
 }));

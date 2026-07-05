@@ -9,7 +9,7 @@ import { useVoxelStore } from "../store/voxelStore";
 import { useEditorStore } from "../store/editorStore";
 import { colorHex } from "../core/palette";
 import { fromKey } from "../core/voxelKey";
-import { isInsideGrid } from "../core/coords";
+import { HALF_EXTENT, isInsideGrid } from "../core/coords";
 import { isTap, type Pt } from "../input/gesture";
 import { adjacentCell, groundCell } from "./facePick";
 import { voxelWorldPos } from "./worldPos";
@@ -17,7 +17,9 @@ import BoxPlacer from "./BoxPlacer";
 import type { Bounds } from "../core/types";
 
 const INSTANCE_LIMIT = 32768;
-const GROUND = 64;
+// Invisible floor catcher, centered on the origin so a ground tap lands anywhere
+// around (0,0,0) — a couple cells past the buildable extent on every side.
+const GROUND = HALF_EXTENT * 2 + 2;
 
 /** A pleasant 3/4 front framing computed from the character's bounds. */
 function framing(bounds: Bounds | null): {
@@ -25,7 +27,8 @@ function framing(bounds: Bounds | null): {
   target: [number, number, number];
 } {
   if (!bounds) {
-    return { position: [46, 20, 24], target: [32.5, 4, -2] };
+    // Empty scene: frame the origin cell (rendered at world 0.5, 0.5, -0.5).
+    return { position: [5.5, 5, 8.5], target: [0.5, 0.5, -0.5] };
   }
   const cx = (bounds.min[0] + bounds.max[0]) / 2 + 0.5;
   const cy = (bounds.min[1] + bounds.max[1]) / 2 + 0.5;
@@ -148,7 +151,7 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
       {/* Invisible floor catcher so cubes can be dropped on the ground plane. */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[GROUND / 2, 0, -GROUND / 2]}
+        position={[0, 0, 0]}
         onPointerUp={onGroundUp}
       >
         <planeGeometry args={[GROUND, GROUND]} />

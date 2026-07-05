@@ -8,7 +8,7 @@ import { Edges } from "@react-three/drei";
 import { useVoxelStore } from "../store/voxelStore";
 import { useEditorStore } from "../store/editorStore";
 import { colorHex } from "../core/palette";
-import { DEFAULT_GRID_SIZE } from "../core/coords";
+import { HALF_EXTENT } from "../core/coords";
 import { groundCell } from "./facePick";
 import { voxelWorldPos } from "./worldPos";
 
@@ -21,7 +21,7 @@ type Ghost = { x: number; y: number; z: number; color: string };
  * block there, or on the floor (y=0) if the column is empty. */
 function topOfColumn(x: number, z: number): number {
   const has = useVoxelStore.getState().has;
-  for (let y = DEFAULT_GRID_SIZE.y - 1; y >= 0; y--) {
+  for (let y = HALF_EXTENT; y >= 0; y--) {
     if (has(x, y, z)) return y + 1;
   }
   return 0;
@@ -73,14 +73,14 @@ export default function BoxPlacer({
       raycaster.setFromCamera(ndc, camera);
       const hit = new THREE.Vector3();
       if (!raycaster.ray.intersectPlane(groundPlane, hit)) return null; // aimed at sky
-      // Clamp the ground hit into the grid: near the screen edges the finger
-      // points past the buildable footprint, and snapping to the nearest column
-      // beats having the box vanish.
+      // Clamp the ground hit into the buildable volume: near the screen edges
+      // the finger points past the reachable footprint, and snapping to the
+      // nearest column beats having the box vanish.
       const [rawX, rawZ] = groundCell(hit.x, hit.z);
-      const gx = Math.min(DEFAULT_GRID_SIZE.x - 1, Math.max(0, rawX));
-      const gz = Math.min(DEFAULT_GRID_SIZE.z - 1, Math.max(0, rawZ));
+      const gx = Math.max(-HALF_EXTENT, Math.min(HALF_EXTENT, rawX));
+      const gz = Math.max(-HALF_EXTENT, Math.min(HALF_EXTENT, rawZ));
       const gy = topOfColumn(gx, gz);
-      if (gy >= DEFAULT_GRID_SIZE.y) return null; // column already full to the top
+      if (gy > HALF_EXTENT) return null; // column already full to the top
       const color = ghostRef.current?.color ?? colorHex(useEditorStore.getState().color);
       return { x: gx, y: gy, z: gz, color };
     };

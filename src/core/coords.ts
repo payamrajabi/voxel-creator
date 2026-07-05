@@ -16,8 +16,26 @@ export const CONVENTIONS = {
     "footprint center at feet: X,Z centered on used bounds; Y at lowest used voxel",
 } as const;
 
-/** Maximum uniform grid (PRD §4). */
-export const DEFAULT_GRID_SIZE: GridSize = { x: 64, y: 64, z: 64 };
+/**
+ * Half-extent of the buildable volume. The origin (0,0,0) is the CENTER, so
+ * valid cells run [-HALF_EXTENT, HALF_EXTENT] on every axis — you build up,
+ * down, left, right, forward and back from the origin, not out of one corner.
+ * Sparse storage means the empty volume is free; the real ceiling on a scene is
+ * the rendered-cube cap in `Scene3D` (INSTANCE_LIMIT), not this bound. Bump this
+ * one constant to grow the reachable space.
+ */
+export const HALF_EXTENT = 512;
+
+/**
+ * Nominal grid span recorded in saved files' `gridSize` metadata. The editor
+ * gates edits on {@link HALF_EXTENT} (centered), not on this — it exists only so
+ * the on-device/file format keeps a size field. Centered span = 2·half + 1.
+ */
+export const DEFAULT_GRID_SIZE: GridSize = {
+  x: HALF_EXTENT * 2 + 1,
+  y: HALF_EXTENT * 2 + 1,
+  z: HALF_EXTENT * 2 + 1,
+};
 
 /** Inclusive min/max extent of a set of points, or null if the set is empty. */
 export function computeBounds(
@@ -75,14 +93,18 @@ export function suggestedOrigin(bounds: Bounds): Vec3 {
   return [(minX + maxX) / 2, minY, (minZ + maxZ) / 2];
 }
 
-/** True if the cell is within the grid (used to clamp edits to the volume). */
-export function isInsideGrid(
-  x: number,
-  y: number,
-  z: number,
-  grid: GridSize = DEFAULT_GRID_SIZE,
-): boolean {
+/**
+ * True if the cell is within the buildable volume — a cube centered on the
+ * origin, [-HALF_EXTENT, HALF_EXTENT] inclusive on every axis. Used to keep
+ * edits (in 2D and 3D) inside the reachable space.
+ */
+export function isInsideGrid(x: number, y: number, z: number): boolean {
   return (
-    x >= 0 && x < grid.x && y >= 0 && y < grid.y && z >= 0 && z < grid.z
+    x >= -HALF_EXTENT &&
+    x <= HALF_EXTENT &&
+    y >= -HALF_EXTENT &&
+    y <= HALF_EXTENT &&
+    z >= -HALF_EXTENT &&
+    z <= HALF_EXTENT
   );
 }

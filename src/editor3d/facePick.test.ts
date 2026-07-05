@@ -21,6 +21,12 @@ describe("adjacentCell", () => {
     expect(adjacentCell(5, 3, 2, { x: 0, y: 0, z: 1 })).toEqual([5, 3, 1]);
     expect(adjacentCell(5, 3, 2, { x: 0, y: 0, z: -1 })).toEqual([5, 3, 3]);
   });
+  it("steps into negative space when adding past the origin", () => {
+    expect(adjacentCell(0, 0, 0, { x: -1, y: 0, z: 0 })).toEqual([-1, 0, 0]);
+    expect(adjacentCell(0, 0, 0, { x: 0, y: -1, z: 0 })).toEqual([0, -1, 0]);
+    // world +Z (front) face at the origin steps to a negative grid z
+    expect(adjacentCell(0, 0, 0, { x: 0, y: 0, z: 1 })).toEqual([0, 0, -1]);
+  });
 });
 
 describe("groundCell", () => {
@@ -28,5 +34,9 @@ describe("groundCell", () => {
     expect(groundCell(5.5, -0.5)).toEqual([5, 0]);
     expect(groundCell(0.2, -3.9)).toEqual([0, 3]);
     expect(groundCell(63.9, -63.1)).toEqual([63, 63]);
+  });
+  it("maps hits on the far side of the origin to negative columns", () => {
+    expect(groundCell(-0.5, 0.5)).toEqual([-1, -1]);
+    expect(groundCell(-4.2, 2.7)).toEqual([-5, -3]);
   });
 });
