@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
@@ -12,21 +12,12 @@ import { fromKey } from "../core/voxelKey";
 import { isInsideGrid } from "../core/coords";
 import { isTap, type Pt } from "../input/gesture";
 import { adjacentCell, groundCell } from "./facePick";
+import { voxelWorldPos } from "./worldPos";
+import BoxPlacer from "./BoxPlacer";
 import type { Bounds } from "../core/types";
 
 const INSTANCE_LIMIT = 32768;
 const GROUND = 64;
-
-/**
- * Grid → world mapping for rendering. A voxel (x,y,z) becomes a unit cube
- * centered at (x+0.5, y+0.5, -(z+0.5)): feet (y=0) sit on the ground plane at
- * Y=0, and the front slice (z=0) is nearest the default camera with +X to the
- * right — so the 3D front view matches how you drew it in 2D. The Z flip is why
- * face normals are mapped back through `facePick`, not used directly.
- */
-function voxelWorldPos(x: number, y: number, z: number): [number, number, number] {
-  return [x + 0.5, y + 0.5, -(z + 0.5)];
-}
 
 /** A pleasant 3/4 front framing computed from the character's bounds. */
 function framing(bounds: Bounds | null): {
@@ -77,6 +68,10 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revision]);
 
+  // Set by BoxPlacer while a long-press "glass box" gesture owns the pointer, so
+  // the tap-to-add handlers below don't also fire on that gesture's release.
+  const inBoxGesture = useRef(false);
+
   // A pointer-up is an edit only if it barely moved since pointer-down; anything
   // more was an orbit/pan drag and must not place or remove a cube.
   const wasTap = (e: ThreeEvent<PointerEvent>) => {
@@ -87,6 +82,7 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
   // Tap on an existing cube → add on the tapped face / erase / eyedrop, per tool.
   const onInstanceUp = (v: VoxelInstance, e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    if (inBoxGesture.current) return; // a glass-box gesture handled this release
     if (!wasTap(e)) return;
     const { tool, color, setColor, setLayer } = useEditorStore.getState();
     const vs = useVoxelStore.getState();
@@ -111,6 +107,7 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
   // Tap on bare floor → drop a cube on the ground (only with the paint tool).
   const onGroundUp = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    if (inBoxGesture.current) return; // a glass-box gesture handled this release
     if (!wasTap(e)) return;
     const { tool, color, setLayer } = useEditorStore.getState();
     if (tool !== "paint") return;
@@ -157,6 +154,9 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
         <planeGeometry args={[GROUND, GROUND]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
+
+      {/* Hold-to-place glass box (long-press → drag on ground → release). */}
+      <BoxPlacer inBoxGesture={inBoxGesture} />
 
       <Grid
         cellSize={1}
