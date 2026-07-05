@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { cellsAlongLine, dist, isTap, midpoint } from "./gesture";
+import {
+  cellsAlongLine,
+  dist,
+  isTap,
+  midpoint,
+  segmentAngle,
+  twistDelta,
+} from "./gesture";
 
 describe("gesture math", () => {
   it("dist + midpoint", () => {
@@ -31,6 +38,26 @@ describe("gesture math", () => {
       [1, 1],
       [2, 2],
     ]);
+  });
+
+  it("segmentAngle measures the vector between two touch points", () => {
+    expect(segmentAngle({ x: 0, y: 0 }, { x: 1, y: 0 })).toBeCloseTo(0);
+    expect(segmentAngle({ x: 0, y: 0 }, { x: 0, y: 1 })).toBeCloseTo(Math.PI / 2);
+  });
+
+  it("twistDelta gives the signed rotation of a clockwise (screen) twist", () => {
+    // Fingers horizontal, then rotated so the vector tips downward on screen
+    // (y grows down) — a clockwise twist as the user sees it. Delta is positive.
+    const before = segmentAngle({ x: 200, y: 300 }, { x: 400, y: 300 });
+    const after = segmentAngle({ x: 210, y: 250 }, { x: 390, y: 350 });
+    expect(twistDelta(before, after)).toBeGreaterThan(0);
+  });
+
+  it("twistDelta takes the short way around the ±π wrap", () => {
+    // Just past +π vs just before -π are ~0 apart, not ~2π.
+    expect(twistDelta(3.0, -3.0)).toBeCloseTo(2 * Math.PI - 6, 5);
+    expect(Math.abs(twistDelta(3.0, -3.0))).toBeLessThan(0.3);
+    expect(twistDelta(0, 0.1)).toBeCloseTo(0.1);
   });
 
   it("cellsAlongLine leaves no gaps on a steep fast drag", () => {
