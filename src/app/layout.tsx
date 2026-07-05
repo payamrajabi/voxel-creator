@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
@@ -44,11 +45,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="h-full touch-none select-none overflow-hidden overscroll-none bg-[#2E2F32] text-zinc-100">
-        {children}
-        <ServiceWorkerRegistrar />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
+        <body className="h-full touch-none select-none overflow-hidden overscroll-none bg-[#2E2F32] text-zinc-100">
+          {children}
+          <ServiceWorkerRegistrar />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

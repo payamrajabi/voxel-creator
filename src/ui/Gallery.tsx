@@ -1,5 +1,6 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import { useAppStore } from "../store/appStore";
 
 /**
@@ -22,12 +23,15 @@ export default function Gallery() {
       >
         <div className="mb-5 flex items-center justify-between">
           <h1 className="text-xl font-semibold">My Characters</h1>
-          <button
-            onClick={() => void newProject()}
-            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition-transform active:scale-95"
-          >
-            ＋ New
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => void newProject()}
+              className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition-transform active:scale-95"
+            >
+              ＋ New
+            </button>
+            <UserButton />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
