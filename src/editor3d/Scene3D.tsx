@@ -7,6 +7,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 import { Grid, Instance, Instances, OrbitControls } from "@react-three/drei";
 import { useVoxelStore } from "../store/voxelStore";
 import { useEditorStore } from "../store/editorStore";
+import { useAppStore } from "../store/appStore";
 import { colorHex } from "../core/palette";
 import { fromKey } from "../core/voxelKey";
 import { isInsideGrid } from "../core/coords";
@@ -54,8 +55,13 @@ type VoxelInstance = {
 };
 
 export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) {
-  // The scene remounts on each 2D→3D switch, so frame from the current content.
+  // The scene mounts fresh each time you enter the editor, so frame from the
+  // current content.
   const frame = useMemo(() => framing(useVoxelStore.getState().bounds()), []);
+
+  // When viewing someone else's character ("All Characters"), the scene is
+  // orbit-only: no tapping to add/erase and no long-press placement.
+  const readOnly = useAppStore((s) => s.readOnly);
 
   const revision = useVoxelStore((s) => s.revision);
   const voxels = useMemo<VoxelInstance[]>(() => {
@@ -82,39 +88,37 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
   // Tap on an existing cube → add on the tapped face / erase / eyedrop, per tool.
   const onInstanceUp = (v: VoxelInstance, e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    if (readOnly) return; // viewing another maker's character — orbit only
     if (inBoxGesture.current) return; // a glass-box gesture handled this release
     if (!wasTap(e)) return;
-    const { tool, color, setColor, setLayer } = useEditorStore.getState();
+    const { tool, color, setColor } = useEditorStore.getState();
     const vs = useVoxelStore.getState();
 
     if (tool === "erase") {
       vs.eraseVoxel(v.x, v.y, v.z);
-      setLayer(v.z);
       return;
     }
     if (tool === "eyedropper") {
       const c = vs.getVoxel(v.x, v.y, v.z);
       if (c !== undefined) setColor(c);
-      setLayer(v.z);
       return;
     }
     const [nx, ny, nz] = adjacentCell(v.x, v.y, v.z, e.face?.normal ?? { x: 0, y: 1, z: 0 });
     if (!isInsideGrid(nx, ny, nz)) return; // e.g. adding past the front plane (z<0)
     vs.setVoxel(nx, ny, nz, color);
-    setLayer(nz);
   };
 
   // Tap on bare floor → drop a cube on the ground (only with the paint tool).
   const onGroundUp = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    if (readOnly) return; // viewing another maker's character — orbit only
     if (inBoxGesture.current) return; // a glass-box gesture handled this release
     if (!wasTap(e)) return;
-    const { tool, color, setLayer } = useEditorStore.getState();
+    const { tool, color } = useEditorStore.getState();
     if (tool !== "paint") return;
     const [gx, gz] = groundCell(e.point.x, e.point.z);
     if (!isInsideGrid(gx, 0, gz)) return;
     useVoxelStore.getState().setVoxel(gx, 0, gz, color);
-    setLayer(gz);
   };
 
   return (

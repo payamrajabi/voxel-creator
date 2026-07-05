@@ -11,7 +11,7 @@ const geistSans = Geist({
 
 const APP_NAME = "VoxelOS";
 const APP_DESCRIPTION =
-  "Build low-resolution voxel characters by painting flat layers in 2D and assembling them in 3D.";
+  "Build and orbit low-resolution voxel characters, right in 3D.";
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,

@@ -9,8 +9,23 @@ import {
   type ProjectRecord,
 } from "../persistence/db";
 import { onSyncApplied, scheduleSync, syncNow } from "../persistence/cloudSync";
+import { pullAllCharacters } from "../persistence/api";
+import type { ProjectData } from "../core/types";
 
 export type View = "gallery" | "editor";
+
+/** Which gallery you're looking at: your own characters, or everyone's. */
+export type Scope = "mine" | "all";
+
+/** A character in the public "All Characters" grid. `thumbnail` is rendered
+ * on the client from `data` (server records carry none); `data` lets us open it
+ * read-only in the 3D viewer. */
+export type PublicCharacter = {
+  id: string;
+  name: string;
+  data: ProjectData;
+  thumbnail: string;
+};
 
 /**
  * App-level navigation + project lifecycle. Orchestrates the voxel store and
@@ -23,15 +38,25 @@ export type AppState = {
   view: View;
   currentId: string | null;
   projects: ProjectRecord[];
+  /** Read-only when viewing someone else's character from "All Characters". */
+  readOnly: boolean;
+
+  /** Which gallery is showing, and the fetched public list for "all". */
+  scope: Scope;
+  allProjects: PublicCharacter[];
+  loadingAll: boolean;
 
   init: () => Promise<void>;
   refresh: () => Promise<void>;
   newProject: () => Promise<void>;
   openProject: (id: string) => Promise<void>;
+  openRemote: (item: PublicCharacter) => void;
   saveCurrent: () => Promise<void>;
   exitToGallery: () => Promise<void>;
   renameProject: (id: string, name: string) => Promise<void>;
   removeProject: (id: string) => Promise<void>;
+  setScope: (scope: Scope) => void;
+  loadAllProjects: () => Promise<void>;
 };
 
 export const useAppStore = create<AppState>()((set, get) => ({
@@ -39,6 +64,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
   view: "gallery",
   currentId: null,
   projects: [],
+  readOnly: false,
+  scope: "mine",
+  allProjects: [],
+  loadingAll: false,
 
   init: async () => {
     // Show local characters immediately (works offline), then sync in the
@@ -78,7 +107,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
       data: useVoxelStore.getState().toProjectData(),
       thumbnail: "",
     });
-    set({ currentId: id, view: "editor" });
+    // A new character is always yours and editable, so land back in "mine".
+    set({ currentId: id, view: "editor", readOnly: false, scope: "mine" });
     scheduleSync();
   },
 
@@ -86,7 +116,15 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const rec = await getProject(id);
     if (!rec) return;
     useVoxelStore.getState().loadProjectData(rec.data);
-    set({ currentId: id, view: "editor" });
+    set({ currentId: id, view: "editor", readOnly: false });
+  },
+
+  openRemote: (item) => {
+    // Open another maker's character to orbit, not to edit. `currentId: null`
+    // keeps autosave and saveCurrent inert, so viewing never writes a copy into
+    // your own characters.
+    useVoxelStore.getState().loadProjectData(item.data);
+    set({ currentId: null, view: "editor", readOnly: true });
   },
 
   saveCurrent: async () => {
@@ -107,9 +145,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   exitToGallery: async () => {
+    // saveCurrent is a no-op when read-only (currentId is null), so viewing
+    // someone else's character never persists on the way out.
     await get().saveCurrent();
     await get().refresh();
-    set({ view: "gallery", currentId: null });
+    set({ view: "gallery", currentId: null, readOnly: false });
   },
 
   renameProject: async (id, rawName) => {
@@ -137,5 +177,32 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (get().currentId === id) set({ currentId: null });
     await get().refresh();
     scheduleSync();
+  },
+
+  setScope: (scope) => {
+    set({ scope });
+    // Fetch everyone's characters fresh each time you switch to "all"; "mine"
+    // already lives in `projects` (kept current by sync).
+    if (scope === "all") void get().loadAllProjects();
+  },
+
+  loadAllProjects: async () => {
+    set({ loadingAll: true });
+    try {
+      const remote = await pullAllCharacters();
+      // Server records carry no thumbnail — render a front view from the voxel
+      // data, the same way local cards get theirs.
+      const allProjects: PublicCharacter[] = remote.map((r) => ({
+        id: r.id,
+        name: r.name,
+        data: r.data,
+        thumbnail: frontThumbnail(r.data),
+      }));
+      set({ allProjects });
+    } catch {
+      // Offline or signed out — keep whatever was showing, just drop the spinner.
+    } finally {
+      set({ loadingAll: false });
+    }
   },
 }));

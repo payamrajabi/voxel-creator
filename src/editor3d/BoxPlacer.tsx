@@ -7,6 +7,7 @@ import { useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 import { useVoxelStore } from "../store/voxelStore";
 import { useEditorStore } from "../store/editorStore";
+import { useAppStore } from "../store/appStore";
 import { colorHex } from "../core/palette";
 import { DEFAULT_GRID_SIZE } from "../core/coords";
 import { groundCell } from "./facePick";
@@ -102,6 +103,8 @@ export default function BoxPlacer({
     };
 
     const onDown = (e: PointerEvent) => {
+      // Viewing another maker's character — orbit only, no placement gesture.
+      if (useAppStore.getState().readOnly) return;
       // A second finger means a pinch — hand it to OrbitControls, drop the box.
       if (activeId.current !== null) {
         clearTimer();
@@ -149,7 +152,6 @@ export default function BoxPlacer({
         const cell = ghostRef.current;
         if (cell) {
           useVoxelStore.getState().setVoxel(cell.x, cell.y, cell.z, useEditorStore.getState().color);
-          useEditorStore.getState().setLayer(cell.z);
         }
         exitMode();
         // Leave inBoxGesture true through this release so r3f's tap-to-add bails;

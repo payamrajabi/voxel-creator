@@ -29,6 +29,38 @@ export type CharacterRow = {
 
 export type IncomingCharacter = CharacterRow & { createdAt?: number };
 
+export type PublicCharacterRow = {
+  id: string;
+  name: string;
+  data: ProjectData;
+  updatedAt: number;
+};
+
+/**
+ * Every maker's characters for the public "All Characters" gallery — newest
+ * first, tombstones excluded, capped so the payload stays bounded. Deliberately
+ * NOT user-scoped: there are no per-character privacy settings, so any signed-in
+ * user sees everyone's characters. Read-only; edits still go through the
+ * user-scoped upsert.
+ */
+export async function listAllCharacters(
+  limit = 200,
+): Promise<PublicCharacterRow[]> {
+  const rows = await db()`
+    select id, name, data, updated_at
+    from characters
+    where deleted = false
+    order by updated_at desc
+    limit ${limit}
+  `;
+  return rows.map((r) => ({
+    id: r.id as string,
+    name: r.name as string,
+    data: r.data as ProjectData,
+    updatedAt: Number(r.updated_at),
+  }));
+}
+
 /** A user's characters changed at/after `since` (ms epoch); oldest-change first. */
 export async function listCharacters(
   userId: string,
