@@ -13,6 +13,8 @@ export type ProjectRecord = {
   updatedAt: number;
   data: ProjectData;
   thumbnail: string; // PNG data URL, or "" when the character is empty
+  /** Tombstone: kept after delete so the delete syncs, then hidden from the gallery. */
+  deleted?: boolean;
 };
 
 interface VoxelDBSchema extends DBSchema {
@@ -40,11 +42,16 @@ function getDB() {
   return dbPromise;
 }
 
-/** All saved characters, most-recently-updated first. */
+/** Saved characters for the gallery (tombstones hidden), most-recent first. */
 export async function listProjects(): Promise<ProjectRecord[]> {
   const db = await getDB();
   const all = await db.getAllFromIndex("projects", "by-updated");
-  return all.reverse();
+  return all.reverse().filter((r) => !r.deleted);
+}
+
+/** Every stored record, including tombstones — for sync, not the gallery. */
+export async function getAllRecords(): Promise<ProjectRecord[]> {
+  return (await getDB()).getAll("projects");
 }
 
 export async function getProject(

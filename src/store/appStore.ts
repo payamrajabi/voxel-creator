@@ -3,12 +3,12 @@ import { useVoxelStore } from "./voxelStore";
 import { DEFAULT_GRID_SIZE } from "../core/coords";
 import { frontThumbnail } from "../persistence/thumbnail";
 import {
-  deleteProject,
   getProject,
   listProjects,
   putProject,
   type ProjectRecord,
 } from "../persistence/db";
+import { onSyncApplied, scheduleSync, syncNow } from "../persistence/cloudSync";
 
 export type View = "gallery" | "editor";
 
@@ -41,7 +41,18 @@ export const useAppStore = create<AppState>()((set, get) => ({
   projects: [],
 
   init: async () => {
+    // Show local characters immediately (works offline), then sync in the
+    // background: uploads any local-only characters to the account and pulls
+    // down anything from other devices, last-write-wins.
     set({ projects: await listProjects(), ready: true });
+    onSyncApplied(() => void get().refresh());
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", () => scheduleSync());
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) scheduleSync();
+      });
+    }
+    void syncNow().then(() => get().refresh());
   },
 
   refresh: async () => {
@@ -68,6 +79,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       thumbnail: "",
     });
     set({ currentId: id, view: "editor" });
+    scheduleSync();
   },
 
   openProject: async (id) => {
@@ -91,6 +103,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       data,
       thumbnail: frontThumbnail(data),
     });
+    scheduleSync();
   },
 
   exitToGallery: async () => {
@@ -111,11 +124,18 @@ export const useAppStore = create<AppState>()((set, get) => ({
     });
     if (get().currentId === id) useVoxelStore.setState({ name });
     await get().refresh();
+    scheduleSync();
   },
 
   removeProject: async (id) => {
-    await deleteProject(id);
+    // Soft-delete: keep a tombstone (deleted + bumped updatedAt) so the delete
+    // syncs to the account and other devices, rather than a local-only removal.
+    const rec = await getProject(id);
+    if (rec) {
+      await putProject({ ...rec, deleted: true, thumbnail: "", updatedAt: Date.now() });
+    }
     if (get().currentId === id) set({ currentId: null });
     await get().refresh();
+    scheduleSync();
   },
 }));
