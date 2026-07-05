@@ -25,9 +25,13 @@ export default function TopBar() {
       </button>
 
       {readOnly ? (
-        <span className="pointer-events-none rounded-xl bg-zinc-900/70 px-3 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur">
-          Viewing
-        </span>
+        <button
+          onClick={() => void useAppStore.getState().remixCurrent()}
+          className="pointer-events-auto rounded-xl bg-white px-4 py-1.5 text-sm font-semibold text-black shadow-lg transition-transform active:scale-95"
+          aria-label="Remix: save an editable copy to your characters"
+        >
+          Remix
+        </button>
       ) : (
         <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-zinc-900/70 p-1 backdrop-blur">
           <button

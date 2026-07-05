@@ -51,6 +51,7 @@ export type AppState = {
   newProject: () => Promise<void>;
   openProject: (id: string) => Promise<void>;
   openRemote: (item: PublicCharacter) => void;
+  remixCurrent: () => Promise<void>;
   saveCurrent: () => Promise<void>;
   exitToGallery: () => Promise<void>;
   renameProject: (id: string, name: string) => Promise<void>;
@@ -125,6 +126,32 @@ export const useAppStore = create<AppState>()((set, get) => ({
     // your own characters.
     useVoxelStore.getState().loadProjectData(item.data);
     set({ currentId: null, view: "editor", readOnly: true });
+  },
+
+  remixCurrent: async () => {
+    // "Remix": duplicate the character you're viewing (read-only, currentId
+    // null) into your own library and drop into the editor on the copy. Its
+    // geometry is already loaded in the voxel store, so we just re-name it,
+    // persist a fresh owned record, and flip out of read-only. Autosave then
+    // keeps the copy current; sync uploads it like any other of your characters.
+    const source = useVoxelStore.getState().toProjectData();
+    if (source.voxels.length === 0) return;
+    const base = source.name.trim() || "Untitled";
+    const name = `${base} (remix)`;
+    const id = crypto.randomUUID();
+    const t = Date.now();
+    const data: ProjectData = { ...source, name };
+    useVoxelStore.setState({ name });
+    await putProject({
+      id,
+      name,
+      createdAt: t,
+      updatedAt: t,
+      data,
+      thumbnail: frontThumbnail(data),
+    });
+    set({ currentId: id, view: "editor", readOnly: false, scope: "mine" });
+    scheduleSync();
   },
 
   saveCurrent: async () => {
