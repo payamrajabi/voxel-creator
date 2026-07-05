@@ -22,6 +22,24 @@ export async function pullCharacters(): Promise<WireRecord[]> {
   return body.characters ?? [];
 }
 
+/** One character in the public "All Characters" feed (read-only, all makers). */
+export type PublicRecord = {
+  id: string;
+  name: string;
+  data: ProjectData;
+  updatedAt: number;
+};
+
+/** Every maker's characters for the public gallery — not user-scoped. */
+export async function pullAllCharacters(): Promise<PublicRecord[]> {
+  const res = await fetch("/api/characters/all", {
+    headers: { accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`pull all failed: ${res.status}`);
+  const body = (await res.json()) as { characters?: PublicRecord[] };
+  return body.characters ?? [];
+}
+
 /** Upload a batch of local records. */
 export async function pushCharacters(records: WireRecord[]): Promise<void> {
   if (records.length === 0) return;

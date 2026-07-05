@@ -1,32 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import Canvas2D from "../editor2d/Canvas2D";
 import CanvasHost from "../editor3d/CanvasHost";
-import { useEditorStore } from "../store/editorStore";
+import { useAppStore } from "../store/appStore";
 import ColorPicker from "./ColorPicker";
 import Hotbar from "./Hotbar";
-import LayerBar from "./LayerBar";
 import TopBar from "./TopBar";
 
 /**
- * The editor shell. 2D and 3D are two views over the same voxel store — the
- * mode toggle swaps which one is mounted; the data (and thus your work) lives in
- * the store, so switching never loses anything.
+ * The editor shell. The 3D scene is the one and only view over the voxel store —
+ * the data (and thus your work) lives in the store. When you open one of your
+ * own characters it's fully editable; when you open someone else's from "All
+ * Characters" the scene is read-only, so the tool dock is hidden and you just
+ * orbit to look.
  */
 export default function Editor() {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const mode = useEditorStore((s) => s.mode);
+  const readOnly = useAppStore((s) => s.readOnly);
 
   return (
     <main className="relative h-full w-full overflow-hidden">
-      {mode === "2d" ? <Canvas2D /> : <CanvasHost />}
+      <CanvasHost />
       <TopBar />
-      {mode === "2d" && <LayerBar />}
-      {/* The color + tool dock is shared: in 3D, Paint adds a cube, Erase
-          removes one, Pick eyedrops — same tools, same active color as 2D. */}
-      <Hotbar onOpenPicker={() => setPickerOpen(true)} />
-      {pickerOpen && <ColorPicker onClose={() => setPickerOpen(false)} />}
+      {!readOnly && (
+        <>
+          {/* Color + tool dock: Paint adds a cube, Erase removes one, Pick
+              eyedrops — same active color throughout. */}
+          <Hotbar onOpenPicker={() => setPickerOpen(true)} />
+          {pickerOpen && <ColorPicker onClose={() => setPickerOpen(false)} />}
+        </>
+      )}
     </main>
   );
 }

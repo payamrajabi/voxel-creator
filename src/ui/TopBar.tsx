@@ -1,17 +1,15 @@
 "use client";
 
-import { useEditorStore } from "../store/editorStore";
 import { useVoxelStore } from "../store/voxelStore";
 import { useAppStore } from "../store/appStore";
 
-/** Compact top bar: title, undo/redo, and the 2D/3D mode toggle. */
+/** Compact top bar: back to the gallery, plus undo/redo while editing. */
 export default function TopBar() {
   const canUndo = useVoxelStore((s) => s.undoStack.length > 0);
   const canRedo = useVoxelStore((s) => s.redoStack.length > 0);
   const undo = useVoxelStore((s) => s.undo);
   const redo = useVoxelStore((s) => s.redo);
-  const mode = useEditorStore((s) => s.mode);
-  const setMode = useEditorStore((s) => s.setMode);
+  const readOnly = useAppStore((s) => s.readOnly);
 
   return (
     <div
@@ -23,42 +21,33 @@ export default function TopBar() {
         className="pointer-events-auto flex items-center gap-1 rounded-xl bg-zinc-900/70 px-3 py-1.5 text-sm font-semibold backdrop-blur transition-transform active:scale-95"
         aria-label="Back to your characters (saves first)"
       >
-        <span className="text-zinc-400">‹</span> Projects
+        <span className="text-zinc-400">‹</span> {readOnly ? "Gallery" : "Projects"}
       </button>
 
-      <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-zinc-900/70 p-1 backdrop-blur">
-        <button
-          onClick={undo}
-          disabled={!canUndo}
-          className="rounded-lg px-3 py-1.5 text-base disabled:opacity-30"
-          aria-label="Undo"
-        >
-          ↶
-        </button>
-        <button
-          onClick={redo}
-          disabled={!canRedo}
-          className="rounded-lg px-3 py-1.5 text-base disabled:opacity-30"
-          aria-label="Redo"
-        >
-          ↷
-        </button>
-      </div>
-
-      <div className="pointer-events-auto flex overflow-hidden rounded-xl bg-zinc-900/70 text-xs font-medium backdrop-blur">
-        {(["2d", "3d"] as const).map((m) => (
+      {readOnly ? (
+        <span className="pointer-events-none rounded-xl bg-zinc-900/70 px-3 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur">
+          Viewing
+        </span>
+      ) : (
+        <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-zinc-900/70 p-1 backdrop-blur">
           <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`px-3 py-1.5 uppercase ${
-              mode === m ? "bg-white text-black" : "text-zinc-300"
-            }`}
-            title={m === "3d" ? "3D view — orbit your character" : "2D editing"}
+            onClick={undo}
+            disabled={!canUndo}
+            className="rounded-lg px-3 py-1.5 text-base disabled:opacity-30"
+            aria-label="Undo"
           >
-            {m}
+            ↶
           </button>
-        ))}
-      </div>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className="rounded-lg px-3 py-1.5 text-base disabled:opacity-30"
+            aria-label="Redo"
+          >
+            ↷
+          </button>
+        </div>
+      )}
     </div>
   );
 }

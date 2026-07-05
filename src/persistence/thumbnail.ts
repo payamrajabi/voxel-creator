@@ -5,7 +5,7 @@ import { colorHex } from "../core/palette";
  * A small front-view PNG for gallery cards: the front-most (lowest Z) color of
  * each (x,y) column, centered on a square. Pure client-side canvas work; returns
  * "" for an empty character or outside the browser. Y is flipped so feet sit at
- * the bottom, matching the 2D editor.
+ * the bottom.
  */
 export function frontThumbnail(data: ProjectData, size = 160): string {
   if (typeof document === "undefined" || data.voxels.length === 0) return "";
