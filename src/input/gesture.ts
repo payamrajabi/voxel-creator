@@ -10,6 +10,20 @@ export function midpoint(a: Pt, b: Pt): Pt {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
+/** Angle (radians) of the vector from `a` to `b`, measured with atan2. */
+export function segmentAngle(a: Pt, b: Pt): number {
+  return Math.atan2(b.y - a.y, b.x - a.x);
+}
+
+/**
+ * Shortest signed change in angle from `prev` to `cur` (radians), wrapped into
+ * (-π, π]. Used to turn a two-finger twist into a frame-by-frame rotation delta
+ * without a discontinuity when the angle crosses ±π.
+ */
+export function twistDelta(prev: number, cur: number): number {
+  return Math.atan2(Math.sin(cur - prev), Math.cos(cur - prev));
+}
+
 /** Default movement (px) under which a pointer press counts as a tap, not a drag. */
 export const TAP_SLOP = 6;
 
