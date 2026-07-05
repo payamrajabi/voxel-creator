@@ -1,15 +1,22 @@
 "use client";
 
+import { Eraser, PaintBrush } from "@phosphor-icons/react/dist/ssr";
+import type { Icon } from "@phosphor-icons/react";
 import { colorHex } from "../core/palette";
 import { useEditorStore, type Tool } from "../store/editorStore";
 
-const TOOLS: { id: Tool; label: string }[] = [
-  { id: "paint", label: "Paint" },
-  { id: "erase", label: "Erase" },
-  { id: "eyedropper", label: "Pick" },
+/** Frosted, iOS-style circular button, matching the top chrome. */
+const circle =
+  "pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full " +
+  "border border-white/10 bg-zinc-900/60 text-white shadow-lg backdrop-blur-xl " +
+  "transition active:scale-90";
+
+const TOOLS: { id: Tool; label: string; Icon: Icon }[] = [
+  { id: "paint", label: "Paint", Icon: PaintBrush },
+  { id: "erase", label: "Erase", Icon: Eraser },
 ];
 
-/** Bottom dock: active-color swatch (opens the picker) + tool buttons. */
+/** Bottom corners: color swatch (left, opens the picker) + paint/erase (right). */
 export default function Hotbar({ onOpenPicker }: { onOpenPicker: () => void }) {
   const color = useEditorStore((s) => s.color);
   const tool = useEditorStore((s) => s.tool);
@@ -17,30 +24,35 @@ export default function Hotbar({ onOpenPicker }: { onOpenPicker: () => void }) {
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-3"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between p-3"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
     >
-      <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-zinc-900/80 p-2 shadow-xl backdrop-blur">
-        <button
-          onClick={onOpenPicker}
-          className="h-11 w-11 rounded-xl border-2 border-white/70 transition-transform active:scale-95"
-          style={{ backgroundColor: colorHex(color) }}
-          aria-label="Choose color"
-        />
-        <div className="mx-1 h-8 w-px bg-white/15" />
-        {TOOLS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTool(t.id)}
-            className={`h-11 rounded-xl px-3 text-sm font-medium transition-colors ${
-              tool === t.id
-                ? "bg-white text-black"
-                : "bg-white/10 text-zinc-200 hover:bg-white/20"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <button
+        onClick={onOpenPicker}
+        className="pointer-events-auto h-11 w-11 rounded-full border-2 border-white/70 shadow-lg transition active:scale-90"
+        style={{ backgroundColor: colorHex(color) }}
+        aria-label="Choose color"
+      />
+
+      <div className="flex items-center gap-2">
+        {TOOLS.map(({ id, label, Icon }) => {
+          const active = tool === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setTool(id)}
+              className={
+                active
+                  ? "pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-lg transition active:scale-90"
+                  : circle
+              }
+              aria-label={label}
+              aria-pressed={active}
+            >
+              <Icon size={22} weight="bold" />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
