@@ -121,16 +121,27 @@ Each phase follows plan-first / approve-then-build / commit-to-`main`.
 
 ---
 
-## Deferred past V1 (the "figure out later")
+## Post-V1 roadmap (tracked)
 
-Safe to add later without disturbing the core:
+**Shipped since V1:** project **gallery** + thumbnails · **3D sculpting** (Phase 5) ·
+hold-to-place **"glass box"** tool · **local-first cloud sync with real accounts**
+(Clerk auth + Neon Postgres, deployed on `main`).
 
-- Project **gallery** + thumbnails + multi-character management
-- **Canonical JSON export** (the eventual downstream handoff — logic is pre-built in the
-  core serializer, only the download UI is deferred)
-- **`.vox`** export (MagicaVoxel, Y-up→Z-up)
-- **X-mirror** symmetry, **bucket fill**
-- Import/export project files, cloud sync
+**Still open — additive, safe without disturbing the core:**
+
+- [ ] **Clerk production instance.** Auth currently runs on Clerk's *development* instance —
+  fine for ~12 kids (100-user cap, $0) but has a dev-mode rough edge and isn't your own
+  auth domain. Upgrading is **deferred, gated on a custom domain** (Clerk prod can't run on a
+  `*.vercel.app` address). When ready: point a domain at Vercel → create the Clerk production
+  instance + your own Google OAuth creds + add Clerk's DNS records → swap `pk_test`/`sk_test`
+  → `pk_live` in Vercel → **re-key existing Neon rows dev→prod by email so no characters are
+  orphaned.** Only new cost: the domain (~$12/yr). (Full recipe saved in Claude's memory.)
+- [ ] **Shared-device multi-user.** IndexedDB isn't user-scoped, so on a shared phone the
+  first account to sign in absorbs that device's local characters. Fine under "Brooks signs
+  in first"; harden before multiple accounts routinely share one device.
+- [ ] **Canonical JSON export** (downstream handoff — logic pre-built in the serializer, only
+  the download UI remains) and **`.vox`** export (MagicaVoxel, Y-up→Z-up).
+- [ ] **X-mirror** symmetry and **bucket fill** (fast-follow editing tools).
 
 ---
 

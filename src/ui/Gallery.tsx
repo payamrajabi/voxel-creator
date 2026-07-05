@@ -2,6 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import { useAppStore, type Scope } from "../store/appStore";
+import GalleryCard from "./GalleryCard";
 
 const SCOPES: [Scope, string][] = [
   ["mine", "My Characters"],
@@ -10,9 +11,9 @@ const SCOPES: [Scope, string][] = [
 
 /**
  * The home screen. A toggle up top switches between "My Characters" (yours, from
- * this device + your account) and "All Characters" (everyone's, read-only). Tap
- * a card to open it in 3D — your own are editable, others' are view-only. Kept
- * deliberately simple and finger-friendly.
+ * this device + your account) and "All Characters" (everyone's, read-only). Each
+ * card is a live 3D preview that slowly orbits the build (see GalleryCard); tap
+ * one to open it in 3D — your own are editable, others' are view-only.
  */
 export default function Gallery() {
   const scope = useAppStore((s) => s.scope);
@@ -21,10 +22,6 @@ export default function Gallery() {
   const allProjects = useAppStore((s) => s.allProjects);
   const loadingAll = useAppStore((s) => s.loadingAll);
   const newProject = useAppStore((s) => s.newProject);
-  const openProject = useAppStore((s) => s.openProject);
-  const openRemote = useAppStore((s) => s.openRemote);
-  const renameProject = useAppStore((s) => s.renameProject);
-  const removeProject = useAppStore((s) => s.removeProject);
 
   return (
     <main className="h-full w-full overflow-y-auto bg-[#2E2F32] text-zinc-100">
@@ -58,11 +55,11 @@ export default function Gallery() {
         </div>
 
         {scope === "mine" ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="flex flex-col gap-4">
             {projects.length === 0 && (
               <button
                 onClick={() => void newProject()}
-                className="col-span-2 flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/20 text-zinc-400 transition-transform active:scale-95 sm:col-span-3"
+                className="flex aspect-video flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/20 text-zinc-400 transition-transform active:scale-95"
               >
                 <span className="text-4xl">＋</span>
                 <span className="text-sm">Make your first character</span>
@@ -70,52 +67,13 @@ export default function Gallery() {
             )}
 
             {projects.map((p) => (
-              <div key={p.id} className="flex flex-col gap-1.5">
-                <button
-                  onClick={() => void openProject(p.id)}
-                  className="relative aspect-square overflow-hidden rounded-2xl bg-zinc-800 transition-transform active:scale-95"
-                >
-                  {p.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.thumbnail}
-                      alt={p.name}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-3xl text-zinc-600">
-                      ▦
-                    </span>
-                  )}
-                </button>
-                <div className="flex items-center gap-1">
-                  <input
-                    defaultValue={p.name}
-                    onBlur={(e) => void renameProject(p.id, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                    }}
-                    className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 text-sm text-zinc-200 outline-none focus:bg-white/10"
-                    aria-label="Character name"
-                  />
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete "${p.name}"? This can't be undone.`))
-                        void removeProject(p.id);
-                    }}
-                    className="rounded-md px-1.5 py-0.5 text-zinc-500 transition-colors active:text-red-400"
-                    aria-label={`Delete ${p.name}`}
-                  >
-                    🗑
-                  </button>
-                </div>
-              </div>
+              <GalleryCard key={p.id} project={p} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="flex flex-col gap-4">
             {allProjects.length === 0 && (
-              <p className="col-span-2 py-12 text-center text-sm text-zinc-500 sm:col-span-3">
+              <p className="py-12 text-center text-sm text-zinc-500">
                 {loadingAll
                   ? "Loading every character…"
                   : "No characters have been built yet."}
@@ -123,31 +81,7 @@ export default function Gallery() {
             )}
 
             {allProjects.map((p) => (
-              <div key={p.id} className="flex flex-col gap-1.5">
-                <button
-                  onClick={() => openRemote(p)}
-                  className="relative aspect-square overflow-hidden rounded-2xl bg-zinc-800 transition-transform active:scale-95"
-                >
-                  {p.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.thumbnail}
-                      alt={p.name}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-3xl text-zinc-600">
-                      ▦
-                    </span>
-                  )}
-                </button>
-                <span
-                  className="truncate px-1 py-0.5 text-sm text-zinc-300"
-                  title={p.name}
-                >
-                  {p.name || "Untitled"}
-                </span>
-              </div>
+              <GalleryCard key={p.id} project={p} readOnly />
             ))}
           </div>
         )}

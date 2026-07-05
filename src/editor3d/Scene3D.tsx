@@ -15,6 +15,7 @@ import { isTap, type Pt } from "../input/gesture";
 import { adjacentCell, groundCell } from "./facePick";
 import { voxelWorldPos } from "./worldPos";
 import BoxPlacer from "./BoxPlacer";
+import TwoFingerOrbit from "./TwoFingerOrbit";
 import type { Bounds } from "../core/types";
 
 const INSTANCE_LIMIT = 32768;
@@ -78,6 +79,10 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
   // the tap-to-add handlers below don't also fire on that gesture's release.
   const inBoxGesture = useRef(false);
 
+  // Set by TwoFingerOrbit while a two-finger camera gesture (twist/pinch/pan) is
+  // active, so lifting those fingers over a cube doesn't place or erase one.
+  const inOrbitGesture = useRef(false);
+
   // A pointer-up is an edit only if it barely moved since pointer-down; anything
   // more was an orbit/pan drag and must not place or remove a cube.
   const wasTap = (e: ThreeEvent<PointerEvent>) => {
@@ -90,6 +95,7 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
     e.stopPropagation();
     if (readOnly) return; // viewing another maker's character — orbit only
     if (inBoxGesture.current) return; // a glass-box gesture handled this release
+    if (inOrbitGesture.current) return; // a two-finger camera gesture owned this
     if (!wasTap(e)) return;
     const { tool, color, setColor } = useEditorStore.getState();
     const vs = useVoxelStore.getState();
@@ -113,6 +119,7 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
     e.stopPropagation();
     if (readOnly) return; // viewing another maker's character — orbit only
     if (inBoxGesture.current) return; // a glass-box gesture handled this release
+    if (inOrbitGesture.current) return; // a two-finger camera gesture owned this
     if (!wasTap(e)) return;
     const { tool, color } = useEditorStore.getState();
     if (tool !== "paint") return;
@@ -162,6 +169,9 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
       {/* Hold-to-place glass box (long-press → drag on ground → release). */}
       <BoxPlacer inBoxGesture={inBoxGesture} />
 
+      {/* Two-finger twist → orbit (one-finger rotate is off on OrbitControls). */}
+      <TwoFingerOrbit inOrbitGesture={inOrbitGesture} />
+
       <Grid
         cellSize={1}
         cellThickness={0.6}
@@ -175,8 +185,11 @@ export default function Scene3D({ downRef }: { downRef: RefObject<Pt | null> }) 
         fadeStrength={1.5}
       />
 
+      {/* One-finger rotate is off — orbiting is a two-finger twist (see
+          TwoFingerOrbit). Two-finger pinch-zoom and pan stay here. */}
       <OrbitControls
         makeDefault
+        enableRotate={false}
         enablePan
         enableDamping
         dampingFactor={0.1}
