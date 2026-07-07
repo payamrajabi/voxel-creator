@@ -31,15 +31,16 @@ function phaseFromId(id: string): number {
 }
 
 /**
- * One gallery card. Shows the static front-view thumbnail as an instant
- * placeholder, then — only while the card is actually on screen — mounts a live
- * orbiting 3D preview on top and fades it in. Mounting lazily (and unmounting
- * when scrolled away) keeps the number of live WebGL contexts small, which
- * iOS Safari strictly caps.
+ * One gallery card: the static front-view thumbnail as an instant placeholder,
+ * then — only while the card is actually on screen — a live orbiting 3D preview
+ * mounted on top and faded in. Mounting lazily (and unmounting when scrolled
+ * away) keeps the number of live WebGL contexts small, which iOS Safari
+ * strictly caps.
  *
- * `readOnly` cards belong to another maker ("All Characters"): tapping opens a
- * view-only 3D orbit instead of the editor, and the rename/delete footer is
- * replaced by a static name.
+ * No name or delete affordance: characters are unnamed in the UI, and the only
+ * way to delete one is to erase every voxel and leave the editor (see
+ * appStore.exitToGallery). `readOnly` cards belong to another maker ("All
+ * Characters") and open a view-only 3D orbit instead of the editor.
  */
 export default function GalleryCard({
   project: p,
@@ -50,8 +51,6 @@ export default function GalleryCard({
 }) {
   const openProject = useAppStore((s) => s.openProject);
   const openRemote = useAppStore((s) => s.openRemote);
-  const renameProject = useAppStore((s) => s.renameProject);
-  const removeProject = useAppStore((s) => s.removeProject);
 
   const cardRef = useRef<HTMLButtonElement>(null);
   const [inView, setInView] = useState(false);
@@ -81,73 +80,40 @@ export default function GalleryCard({
   }, [hasVoxels]);
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <button
-        ref={cardRef}
-        onClick={() => (readOnly ? openRemote(p) : void openProject(p.id))}
-        style={{ aspectRatio: aspect }}
-        className="relative w-full overflow-hidden rounded-2xl bg-zinc-800 transition-transform active:scale-95"
-      >
-        {p.thumbnail ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={p.thumbnail}
-            alt={p.name}
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          !hasVoxels && (
-            <span className="flex h-full w-full items-center justify-center text-3xl text-zinc-600">
-              ▦
-            </span>
-          )
-        )}
-
-        {hasVoxels && inView && (
-          <div
-            className={`absolute inset-0 transition-opacity duration-300 ${
-              previewReady ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <CharacterPreview
-              voxels={p.data.voxels}
-              phase={phaseFromId(p.id)}
-              onReady={() => setPreviewReady(true)}
-            />
-          </div>
-        )}
-      </button>
-
-      {readOnly ? (
-        <span
-          className="truncate px-1 py-0.5 text-sm text-zinc-300"
-          title={p.name}
-        >
-          {p.name || "Untitled"}
-        </span>
+    <button
+      ref={cardRef}
+      onClick={() => (readOnly ? openRemote(p) : void openProject(p.id))}
+      style={{ aspectRatio: aspect }}
+      className="relative w-full overflow-hidden rounded-2xl bg-zinc-800 transition-transform active:scale-95"
+    >
+      {p.thumbnail ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={p.thumbnail}
+          alt={p.name}
+          className="h-full w-full object-contain"
+        />
       ) : (
-        <div className="flex items-center gap-1">
-          <input
-            defaultValue={p.name}
-            onBlur={(e) => void renameProject(p.id, e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-            }}
-            className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 text-sm text-zinc-200 outline-none focus:bg-white/10"
-            aria-label="Character name"
+        !hasVoxels && (
+          <span className="flex h-full w-full items-center justify-center text-3xl text-zinc-600">
+            ▦
+          </span>
+        )
+      )}
+
+      {hasVoxels && inView && (
+        <div
+          className={`absolute inset-0 transition-opacity duration-300 ${
+            previewReady ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <CharacterPreview
+            voxels={p.data.voxels}
+            phase={phaseFromId(p.id)}
+            onReady={() => setPreviewReady(true)}
           />
-          <button
-            onClick={() => {
-              if (confirm(`Delete "${p.name}"? This can't be undone.`))
-                void removeProject(p.id);
-            }}
-            className="rounded-md px-1.5 py-0.5 text-zinc-500 transition-colors active:text-red-400"
-            aria-label={`Delete ${p.name}`}
-          >
-            🗑
-          </button>
         </div>
       )}
-    </div>
+    </button>
   );
 }

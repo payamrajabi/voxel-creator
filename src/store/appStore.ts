@@ -54,7 +54,6 @@ export type AppState = {
   remixCurrent: () => Promise<void>;
   saveCurrent: () => Promise<void>;
   exitToGallery: () => Promise<void>;
-  renameProject: (id: string, name: string) => Promise<void>;
   removeProject: (id: string) => Promise<void>;
   setScope: (scope: Scope) => void;
   loadAllProjects: () => Promise<void>;
@@ -169,26 +168,19 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   exitToGallery: async () => {
-    // saveCurrent is a no-op when read-only (currentId is null), so viewing
-    // someone else's character never persists on the way out.
-    await get().saveCurrent();
+    // The only way to delete a character: erase every voxel, then leave the
+    // editor. Mid-edit, an emptied character is left untouched (saveCurrent
+    // skips it) so clearing the canvas and undoing back never loses it; only
+    // on the way out do we treat "empty" as "delete". Viewing someone else's
+    // character (currentId null) hits neither branch, so it's never persisted.
+    const id = get().currentId;
+    if (id) {
+      const data = useVoxelStore.getState().toProjectData();
+      if (data.voxels.length === 0) await get().removeProject(id);
+      else await get().saveCurrent();
+    }
     await get().refresh();
     set({ view: "gallery", currentId: null, readOnly: false });
-  },
-
-  renameProject: async (id, rawName) => {
-    const name = rawName.trim() || "Untitled";
-    const rec = await getProject(id);
-    if (!rec) return;
-    await putProject({
-      ...rec,
-      name,
-      data: { ...rec.data, name },
-      updatedAt: Date.now(),
-    });
-    if (get().currentId === id) useVoxelStore.setState({ name });
-    await get().refresh();
-    scheduleSync();
   },
 
   removeProject: async (id) => {
