@@ -9,10 +9,10 @@ import {
 } from "./systemCharacters";
 
 describe("SYSTEM_CHARACTERS", () => {
-  it("is a dozen sculptures plus Manhattan, all well-formed", () => {
-    expect(SYSTEM_CHARACTERS).toHaveLength(13);
+  it("is a dozen sculptures plus Manhattan and Claude, all well-formed", () => {
+    expect(SYSTEM_CHARACTERS).toHaveLength(14);
     const ids = new Set(SYSTEM_CHARACTERS.map((s) => s.id));
-    expect(ids.size).toBe(13); // unique
+    expect(ids.size).toBe(14); // unique
     for (const s of SYSTEM_CHARACTERS) {
       expect(s.id.startsWith("system-")).toBe(true);
       expect(s.name.trim().length).toBeGreaterThan(0);
@@ -49,6 +49,7 @@ describe("SYSTEM_CHARACTERS", () => {
       "system-blast-off",
       "system-gold-star",
       "system-ribbit",
+      "system-claude",
     ]);
   });
 });

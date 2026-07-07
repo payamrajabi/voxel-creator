@@ -283,6 +283,21 @@ function frog(): ProjectData {
   return finalize("🐸 Ribbit", m);
 }
 
+// ✳️ — the Claude "clay" mascot: a chunky terracotta critter with two square
+// eyes, little side nubs, and four stubby legs.
+function claude(): ProjectData {
+  const m = model();
+  const clay = C.rust; // muted terracotta — closest palette match to the clay
+  box(m, -6, 5, -4, 6, 9, 4, clay); // flat-bottomed core (so legs seat cleanly)
+  ellipsoid(m, 0, 10, 0, 7, 6, 5.5, clay); // rounded body over it
+  box(m, -9, 10, -1, -7, 13, 1, clay); // left nub
+  box(m, 7, 10, -1, 9, 13, 1, clay); // right nub
+  box(m, -3, 12, -4, -2, 13, -4, C.black); // eyes, painted flush on the face
+  box(m, 2, 12, -4, 3, 13, -4, C.black);
+  for (const lx of [-5, -2, 1, 4]) box(m, lx, 0, -2, lx + 1, 4, 0, C.white); // legs
+  return finalize("✳️ Claude", m);
+}
+
 export type SystemCharacter = {
   id: string;
   name: string;
@@ -296,7 +311,7 @@ const SYSTEM_EPOCH = 1_767_225_600_000; // 2026-01-01T00:00:00Z
 const BUILDERS: (() => ProjectData)[] = [
   manhattan, // flagship: a full voxel city at the format's limits
   heart, island, monkey, brain, rose, octopus,
-  cherries, pikachu, mushroom, rocket, star, frog,
+  cherries, pikachu, mushroom, rocket, star, frog, claude,
 ];
 
 /**
