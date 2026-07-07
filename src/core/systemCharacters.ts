@@ -1,4 +1,5 @@
 import type { ProjectData } from "./types";
+import { manhattan } from "./manhattan";
 import {
   box,
   capsule,
@@ -12,12 +13,14 @@ import {
 } from "./voxelArt";
 
 /**
- * Built-in "system" characters — a dozen little voxel sculptures the app itself
- * contributes to the public "All Characters" gallery, sprinkled among real
- * makers' work to seed the feed and spark ideas. They aren't stored in the DB or
- * owned by any user; the `/api/characters/all` route blends them into the feed
- * at read time (see `blendSystemCharacters`). Each is generated procedurally from
- * the pure toolkit in voxelArt.ts, so tweaking one is just editing its sculpt.
+ * Built-in "system" characters — voxel sculptures the app itself contributes to
+ * the public "All Characters" gallery, sprinkled among real makers' work to seed
+ * the feed and spark ideas: a dozen little emoji pieces plus "Manhattan", a whole
+ * voxel city built to the format's hard limits (see manhattan.ts). They aren't
+ * stored in the DB or owned by any user; the `/api/characters/all` route blends
+ * them into the feed at read time (see `blendSystemCharacters`). Each is generated
+ * procedurally from the pure toolkit in voxelArt.ts, so tweaking one is just
+ * editing its sculpt.
  *
  * Coordinates use the app's conventions: X right, Y up (feet low), Z back — so
  * facial features and other "front" details are placed at negative Z, nearest
@@ -291,6 +294,7 @@ export type SystemCharacter = {
 const SYSTEM_EPOCH = 1_767_225_600_000; // 2026-01-01T00:00:00Z
 
 const BUILDERS: (() => ProjectData)[] = [
+  manhattan, // flagship: a full voxel city at the format's limits
   heart, island, monkey, brain, rose, octopus,
   cherries, pikachu, mushroom, rocket, star, frog,
 ];
